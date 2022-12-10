@@ -10,13 +10,14 @@ else
     cp -r "$template_dir" "$folder_name"
     code "$folder_name"
 fi
+secret=$(cat session_cookie.txt)
 del $folder
 curl 'https://adventofcode.com/2022/day/'$folder_name'/input' \
   -H 'authority: adventofcode.com' \
   -H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9' \
   -H 'accept-language: en-US,en;q=0.9,pl;q=0.8' \
   -H 'cache-control: max-age=0' \
-  -H 'cookie: session=53616c7465645f5f2718b976a6713243b6fde940cccfc5abf30c7b22544c6662710e01d04a4e88a3016766f35d947d9fd6d1a0c0b7772125c013b1a7fd32a8d7' \
+  -H 'cookie: session='$secret \
   -H 'referer: https://adventofcode.com/2022/day/8' \
   -H 'sec-ch-ua: "Microsoft Edge";v="107", "Chromium";v="107", "Not=A?Brand";v="24"' \
   -H 'sec-ch-ua-mobile: ?0' \
