@@ -15,27 +15,39 @@ if (finalCheck)
 
 var fileContent = File.ReadAllLines(filePath);
 var listOfBoolArrays = fileContent.ToList().Select(line => getBoolArrayFromString(line)).ToList();
-
+var mostCommonCollection = listOfBoolArrays;
+var leastCommonCollection = listOfBoolArrays;
 var arrLen = listOfBoolArrays[0].Length;
-uint gamma = 0;
-uint sigma = 0;
+int oxygenRating = 0;
+int co2Rating = 0;
 string res = "";
 for (int i = 0; i < arrLen; i++)
 {
-    var mostCommon = Math.Round(listOfBoolArrays.Select(a => Convert.ToInt32(a[i])).Average());
-    var leastCommon = mostCommon == 1 ? 0 : 1;
-    gamma |= (uint)mostCommon << arrLen - (i + 1);
-    sigma |= (uint)leastCommon << arrLen - (i + 1);
-    Console.WriteLine(Convert.ToString(gamma, 2));
-    res = mostCommon + res;
+    if (mostCommonCollection.Count > 1)
+    {
+        var mostCommonOxy = mostCommonCollection.Select(a => Convert.ToInt32(a[i])).Average() >= 0.5 ? 1 : 0;
+        mostCommonCollection = mostCommonCollection.Where(c => c[i] == (mostCommonOxy == 1)).ToList();
+
+    }
+    if (leastCommonCollection.Count > 1)
+    {
+        var leastCommonC2O = leastCommonCollection.Select(a => Convert.ToInt32(a[i])).Average() >= 0.5 ? 0 : 1;
+        leastCommonCollection = leastCommonCollection.Where(c => c[i] == (leastCommonC2O == 1)).ToList();
+    }
+    if (mostCommonCollection.Count == 1 && leastCommonCollection.Count == 1) break;
 }
-// Console.WriteLine(gamma);
-// Console.WriteLine(sigma);
-Console.WriteLine(gamma * sigma);
+oxygenRating = intFromBoolArray(mostCommonCollection.First());
+co2Rating = intFromBoolArray(leastCommonCollection.First());
+Console.WriteLine(oxygenRating * co2Rating);
+
 bool[] getBoolArrayFromString(string line)
 {
     var result = line.ToCharArray().Select(c => c == '1').ToArray();
     return result;
+}
+int intFromBoolArray(bool[] bArray)
+{
+    return Convert.ToInt32(String.Concat(bArray.Select(x => x ? '1' : '0')), 2);
 }
 
 
