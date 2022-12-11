@@ -156,7 +156,7 @@ class Monkey
     }
     public void TakeTurn(List<Monkey> MonkeyList)
     {
-        while (Items.Count > 0)
+        while (this.Items.Count > 0)
         {
             var currItem = Items.Dequeue();
             Console.WriteLine($"Monkey inspects an item with a worry level of {currItem}");
@@ -176,7 +176,7 @@ class Monkey
             Console.WriteLine($"Current worry level is divisible by {this.TestDivisor}.");
             return this.TrueMonkey;
         }
-            check(ItemWorryLevel, false);
+        check(ItemWorryLevel, false);
 
         Console.WriteLine($"Current worry level is not divisible by {this.TestDivisor}.");
 
