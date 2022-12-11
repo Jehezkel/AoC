@@ -3,7 +3,7 @@
 var filePath = "./test_input.txt";
 var prodFilePath = "./input.txt";
 bool finalCheck = false;
-// finalCheck = true;
+finalCheck = true;
 
 
 if (finalCheck)
@@ -35,8 +35,11 @@ while ((line = reader.ReadLine()) != null)
     }
 
 }
+int mostCommonDivisor = 1;
+MonkeyList.ForEach(m => mostCommonDivisor *= m.TestDivisor);
+MonkeyList.ForEach(m => m.MostCommonDivisor = mostCommonDivisor);
 
-for (int roundsIterator = 1; roundsIterator <= 20; roundsIterator++)
+for (int roundsIterator = 1; roundsIterator <= 10000; roundsIterator++)
 {
     for (int monkeyIterator = 0; monkeyIterator < MonkeyList.Count(); monkeyIterator++)
     {
@@ -50,9 +53,7 @@ for (int roundsIterator = 1; roundsIterator <= 20; roundsIterator++)
 var topMonkey = MonkeyList.OrderByDescending(m => m.InspectedItemsCount).First().InspectedItemsCount;
 var secondOne = MonkeyList.OrderByDescending(m => m.InspectedItemsCount).Skip(1).First().InspectedItemsCount;
 Console.WriteLine("DONE: " + (topMonkey * secondOne));
-// var mon = new Monkey(new[] { "  Operation: new = 22 * old" });
-// var test = mon.InspectionWorryFormula(2);
-// Console.WriteLine(test);
+
 void printRound()
 {
     for (int i = 0; i < MonkeyList.Count; i++)
@@ -63,21 +64,24 @@ void printRound()
 }
 class Monkey
 {
-    public Queue<UInt64> Items { get; set; } = new Queue<UInt64>();
+    public int MostCommonDivisor { get; set; }
+    public Queue<long> Items { get; set; } = new Queue<long>();
     public int TestDivisor { get; set; }
     public int TrueMonkey { get; set; }
     public int FalseMonkey { get; set; }
-    public UInt64 InspectedItemsCount { get; set; } = 0;
-    public Func<UInt64, UInt64> InspectionWorryFormula { get; set; }
-    private UInt64 CalculateWorryAfterInspection(UInt64 MyWorryLevel)
+    public long InspectedItemsCount { get; set; } = 0;
+    public Func<long, long> InspectionWorryFormula { get; set; }
+    private long CalculateWorryAfterInspection(long MyWorryLevel)
     {
-        // Console.WriteLine($"Monkey inspects an item with a worry level of {MyWorryLevel}.");
+        Console.WriteLine($"Monkey inspects an item with a worry level of {MyWorryLevel}.");
         var worryLevelAfterInspection = checked(this.InspectionWorryFormula(MyWorryLevel));
         Console.WriteLine($"Worry level changed to {worryLevelAfterInspection}.");
+        worryLevelAfterInspection = worryLevelAfterInspection % this.MostCommonDivisor;
         this.InspectedItemsCount++;
+
         return worryLevelAfterInspection;
     }
-    private UInt64 CalulateBored(UInt64 InputWorryLevel)
+    private long CalulateBored(long InputWorryLevel)
     {
         var newWorryLevel = (InputWorryLevel / 3);
         Console.WriteLine($"Monkey gets bored with item. Worry level is divided by 3 to {newWorryLevel}");
@@ -100,13 +104,14 @@ class Monkey
     }
     private void SetItems(string line)
     {
-        line.Split(',').ToList().ForEach(c => this.Items.Enqueue(Convert.ToUInt64(c)));
+        line.Split(',').ToList().ForEach(c => this.Items.Enqueue(Convert.ToInt64(c)));
     }
     private void SetOperation(string line)
     {
+
         var paramName = "old";
         var expressionArray = line.Split('=')[1].Trim().Split(' ');
-        var InputParameter = Expression.Parameter(typeof(UInt64), paramName);
+        var InputParameter = Expression.Parameter(typeof(long), paramName);
         Expression a;
         Expression b;
         Expression operation;
@@ -116,7 +121,7 @@ class Monkey
         }
         else
         {
-            a = Expression.Constant(Convert.ToUInt64(expressionArray[0]));
+            a = Expression.Constant(Convert.ToInt64(expressionArray[0]));
         }
         if (expressionArray[2] == paramName)
         {
@@ -124,7 +129,7 @@ class Monkey
         }
         else
         {
-            b = Expression.Constant(Convert.ToUInt64(expressionArray[2]));
+            b = Expression.Constant(Convert.ToInt64(expressionArray[2]));
 
         }
         if (expressionArray[1] == "+")
@@ -135,7 +140,7 @@ class Monkey
         {
             operation = Expression.Multiply(a, b);
         }
-        var lambda = Expression.Lambda<Func<UInt64, UInt64>>(operation, false, InputParameter);
+        var lambda = Expression.Lambda<Func<long, long>>(operation, false, InputParameter);
         this.InspectionWorryFormula = lambda.Compile();
     }
     private void SetDivisor(string line)
@@ -161,34 +166,19 @@ class Monkey
             var currItem = Items.Dequeue();
             Console.WriteLine($"Monkey inspects an item with a worry level of {currItem}");
             var worryAfterCalculation = this.CalculateWorryAfterInspection(currItem);
-            // var boredCalculation = this.CalulateBored(worryAfterCalculation);
             var monkeyTarget = this.GetThrowTarget(worryAfterCalculation);
             Console.WriteLine($"Item with worry level {worryAfterCalculation} is thrown to monkey {monkeyTarget}.");
             MonkeyList[monkeyTarget].Items.Enqueue(worryAfterCalculation);
         }
     }
-    private int GetThrowTarget(UInt64 ItemWorryLevel)
+    private int GetThrowTarget(long ItemWorryLevel)
     {
-        // Math.
-        if (ItemWorryLevel % (UInt64)this.TestDivisor == 0)
+        if (ItemWorryLevel % (long)this.TestDivisor == 0)
         {
-            check(ItemWorryLevel, true);
             Console.WriteLine($"Current worry level is divisible by {this.TestDivisor}.");
             return this.TrueMonkey;
         }
-        check(ItemWorryLevel, false);
-
         Console.WriteLine($"Current worry level is not divisible by {this.TestDivisor}.");
-
         return this.FalseMonkey;
-    }
-    private void check(UInt64 num, bool expected)
-    {
-        var result = num / (UInt64)this.TestDivisor;
-        var checkResult = result * (UInt64)this.TestDivisor != num;
-        if (checkResult == expected)
-        {
-            throw new Exception("wyjebnka");
-        }
     }
 }
