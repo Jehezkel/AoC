@@ -1,22 +1,24 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System.Text.RegularExpressions;
 
-var filePath = args.Count() > 0 && args[0] == "prod" ? "./input.txt" : "./test_input.txt";
+var filePath = args.Count() > 0 && args[0] == "prod" ? "./input.txt" : "./input.txt";
 var input = File.ReadAllText(filePath);
 var packetPairsList = ParseInput(input);
 int i = 1;
 int sum = 0;
+List<int> results = new();
 foreach (var pair in packetPairsList)
 {
-    Console.WriteLine($"CHecking pair {i}");
-    if (pair.left.content <= pair.right.content)
+    Console.WriteLine($"== Pair {i} ==");
+    if (pair.left < pair.right)
     {
         Console.WriteLine("Fine!");
-        sum += i;
+        results.Add(i);
     }
     i++;
+    Console.WriteLine();
 }
-Console.WriteLine();
+Console.WriteLine(results.Sum());
 List<PacketPair> ParseInput(string input)
 {
     List<PacketPair> result = new();
@@ -25,15 +27,15 @@ List<PacketPair> ParseInput(string input)
     {
         var leftPacket = pair.Split('\n')[0];
         var rightPacket = pair.Split('\n')[1];
-        var parsedL = new Packet(ParseList(leftPacket));
-        var parsedR = new Packet(ParseList(rightPacket));
+        var parsedL = ParseList(leftPacket);
+        var parsedR = ParseList(rightPacket);
         result.Add(new PacketPair(parsedL, parsedR));
     }
     return result;
 }
-PacketList ParseList(string bracketsToParse)
+BucketOfElements ParseList(string bracketsToParse)
 {
-    PacketList result = new();
+    BucketOfElements result = new();
     //Remove outer brackets
     var items = bracketsToParse.Substring(1, bracketsToParse.Length - 2);
     string numberAsString = "";
@@ -44,15 +46,15 @@ PacketList ParseList(string bracketsToParse)
         {
             var closingBracketIndex = GetClosingIndex(items.Substring(i));
             var listLength = closingBracketIndex + 1;
-            var listToAdd = listLength == 0 ? new PacketList() : ParseList(items.Substring(i, listLength));
-            result.value.Add(listToAdd);
+            var listToAdd = listLength == 0 ? new BucketOfElements() : ParseList(items.Substring(i, listLength));
+            result.Elements.Add(listToAdd);
             i += listLength;
             continue;
         }
         if (Char.IsDigit(currChar)) numberAsString += currChar;
         if (currChar == ',' || i == items.Length - 1)
         {
-            if (numberAsString.Length > 0) result.value.Add(new PacketValue(Convert.ToInt32(numberAsString)));
+            if (numberAsString.Length > 0) result.Elements.Add(new DirectValueElement(Convert.ToInt32(numberAsString)));
             numberAsString = "";
         }
     }
@@ -76,76 +78,120 @@ int GetClosingIndex(string line)
 
 abstract record PacketElement
 {
-    public static bool operator <=(PacketElement a, PacketElement b)
+    public static bool operator >(PacketElement a, PacketElement b)
     {
-        var aObject = a as PacketList;
-        var bObject = b as PacketList;
-        return aObject <= bObject;
-    }
-    public static bool operator >=(PacketElement a, PacketElement b)
-    {
-        var aObject = a as PacketList;
-        var bObject = b as PacketList;
-        return aObject >= bObject;
-    }
-    public static implicit operator PacketList(PacketElement d) => new(new List<PacketElement>() { d });
-};
-record PacketValue(int value) : PacketElement
-{
-    public static bool operator <=(PacketValue a, PacketValue b)
-    {
-        return a.value <= b.value;
-    }
-    public static bool operator >=(PacketValue a, PacketValue b)
-    {
-        return a.value >= b.value;
-    }
 
-}
-record PacketList : PacketElement
-{
-    public PacketList() { }
-    public PacketList(List<PacketElement> value) => this.value = value;
-    public List<PacketElement> value { get; set; } = new();
-    public static bool operator >=(PacketValue a, PacketList b)
-    {
-        return (PacketList)a >= b;
-    }
-    public static bool operator <=(PacketValue a, PacketList b)
-    {
-        return (PacketList)a <= b;
-    }
-    public static bool operator <=(PacketList a, PacketList b)
-    {
-        if (a.value.Count() > b.value.Count()) return false;
-        if (a.value.Count() < b.value.Count()) return true;
-        for (int i = 0; i < a.value.Count(); i++)
+        if (a is DirectValueElement && b is DirectValueElement)
         {
-            var aVal = a.value[i];
-            var bVal = b.value[i];
-            if (a.value[i] <= b.value[i]) continue;
-            return false;
-
+            var dA = a as DirectValueElement;
+            var dB = b as DirectValueElement;
+            return dA! > dB!;
         }
-        return true;
+
+        var bA = ConvertToBucket(a);
+        var bB = ConvertToBucket(b);
+        return bA > bB;
     }
-    public static bool operator >=(PacketList a, PacketList b)
+    public static bool operator <(PacketElement a, PacketElement b)
     {
-        if (a.value.Count() < b.value.Count()) return false;
-        if (a.value.Count() > b.value.Count()) return true;
-        for (int i = 0; i < a.value.Count(); i++)
+        if (a is DirectValueElement && b is DirectValueElement)
         {
-            if (a.value[i] >= b.value[i]) continue;
-            return false;
+            var dA = a as DirectValueElement;
+            var dB = b as DirectValueElement;
+            return dA! < dB!;
         }
-        return true;
+
+        var bA = ConvertToBucket(a);
+        var bB = ConvertToBucket(b);
+        return bA < bB;
     }
-    // public static explicit operator PacketList(PacketValue d) => new(new List<PacketElement>() { d });
-    public static implicit operator PacketList(PacketValue d) => new(new List<PacketElement>() { d });
+    private static BucketOfElements ConvertToBucket(PacketElement p)
+    {
+        if (p is BucketOfElements) return (BucketOfElements)p;
 
-
-
+        var dP = p as DirectValueElement;
+        var bP = (BucketOfElements)dP;
+        Console.WriteLine($"Mixed types; convert left to {bP.ToString()} and retry comparison");
+        return bP;
+    }
+    // public abstract void Print();
 }
+record DirectValueElement(int value) : PacketElement
+{
+    public static bool operator >(DirectValueElement a, DirectValueElement b)
+    {
+        Console.WriteLine($"Compare {a.ToString()} vs {b.ToString()}");
+        return a.value > b.value;
+    }
+    public static bool operator <(DirectValueElement a, DirectValueElement b)
+    {
+        Console.WriteLine($"Compare {a.ToString()} vs {b.ToString()}");
+        return a.value < b.value;
+    }
+    // public static bool operator ==(DirectValueElement a, DirectValueElement b)
+    // {
+    //     Console.WriteLine($"Compare {a.ToString()} vs {b.ToString()}");
+    //     return a.value < b.value;
+    // }
+    public override string ToString() => value.ToString();
+}
+record BucketOfElements : PacketElement
+{
+    public BucketOfElements() { }
+    public BucketOfElements(DirectValueElement pe) { this.Elements.Add(pe); }
+    public List<PacketElement> Elements { get; set; } = new();
+    public static explicit operator BucketOfElements(DirectValueElement pe) => new(pe);
+    public static bool operator >(BucketOfElements left, BucketOfElements right)
+    {
+        Console.WriteLine($"Compare left{left.ToString()} vs {right.ToString()}");
+        for (int i = 0; i < left.Elements.Count; i++)
+        {
+            var leftElement = left.Elements[i];
+            //right is out of items = left>right
+            if (i >= right.Elements.Count) return true;
+            var rightElement = right.Elements[i];
+            if (leftElement > rightElement) return true;
+        }
+        return false;
+    }
+    public static bool operator <(BucketOfElements left, BucketOfElements right)
+    {
+        Console.WriteLine($"Compare left{left.ToString()} vs {right.ToString()}");
 
-record Packet(PacketList content);
-record PacketPair(Packet left, Packet right);
+        for (int i = 0; i < left.Elements.Count; i++)
+        {
+            var leftElement = left.Elements[i];
+            //right is out of items = left>right
+            if (i >= right.Elements.Count)
+            {
+                Console.WriteLine("Right side ran out of items, so inputs are not in the right order");
+                return false;
+            }
+            var rightElement = right.Elements[i];
+            if (rightElement.Equals(leftElement)) continue;
+            if (leftElement < rightElement)
+            {
+                Console.WriteLine("Left side is smaller, so inputs are in the right order");
+                return true;
+            }
+            if (leftElement > rightElement)
+            {
+                Console.WriteLine("Right side is smaller, so inputs are not in the right order");
+                return false;
+            };
+        }
+        if (left.Elements.Count < right.Elements.Count)
+        {
+            Console.WriteLine("Left side ran out of items, so inputs are in the right order");
+            return true;
+        }
+        return false;
+    }
+
+    public override string ToString()
+    {
+        var innerItems = String.Join(',', this.Elements.Select(e => e.ToString()));
+        return $"[{innerItems}]";
+    }
+}
+record PacketPair(BucketOfElements left, BucketOfElements right);
