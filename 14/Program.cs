@@ -3,14 +3,16 @@ var fileContent = File.ReadAllText("./input.txt");
 var LineList = ParseInput(fileContent);
 var filledSpace = LineList.Select(l => l.ToFullListOfPoints()).Aggregate(new HashSet<Coordinates>(), (l, c) => { l.UnionWith(c); return l; });
 Console.WriteLine(LineList);
-int sandUnits = 0;
+int sandUnits = 1;
 int abyssLevel = filledSpace.Max(x => x.depth);
+int infiniteFloorLevel = filledSpace.Max(x => x.depth + 1);
 Coordinates? currentSand = Newsand();
+var sandStartingPoint = Newsand();
 while (true)
 {
     var oldSand = currentSand;
     currentSand = SandMove(currentSand);
-    if (currentSand.depth > abyssLevel) break;
+    if (currentSand == sandStartingPoint) break;
     if (oldSand == currentSand)
     {
         filledSpace.Add(currentSand);
@@ -39,6 +41,7 @@ Coordinates SandMove(Coordinates sandCords)
         new Coordinates(1,-1),
         new Coordinates(1,1)
 };
+    if (sandCords.depth == infiniteFloorLevel) return sandCords;
     foreach (var move in PossibleMoves)
     {
         if (filledSpace.Contains(sandCords + move)) continue;
@@ -65,6 +68,7 @@ record Coordinates(int depth, int xpos)
     public static bool operator >(Coordinates left, Coordinates right) => left.xpos > right.xpos || left.depth > right.depth ? true : false;
     public static bool operator <(Coordinates left, Coordinates right) => left.xpos < right.xpos || left.depth < right.depth ? true : false;
     public static Coordinates operator +(Coordinates left, Coordinates right) => new Coordinates(left.depth + right.depth, left.xpos + right.xpos);
+    // public static bool operator ==(Coordinates left, Coordinates right) => left.depth == right.depth && left.xpos == right.xpos;
 }
 record Line
 {
