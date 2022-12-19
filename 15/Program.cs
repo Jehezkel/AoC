@@ -3,10 +3,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 var filePath = "./input.txt";
 var fileContent = File.ReadAllLines(filePath);
-// var rowToCheck = 2000000;
 var maxXanY = 4000000;
-// maxXanY = 20;
-// var rowToCheck = 10;
 
 var SensorDataInfo = ParseInput(fileContent).ToList();
 var listOfallItems = new Dictionary<int, List<XRange>>();
