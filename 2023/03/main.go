@@ -37,15 +37,6 @@ func main() {
 	fmt.Println("Output:", answer)
 }
 
-// func parseInput(input string) [][]string{
-// 	var result []string
-// 	for _, line := range strings.Split(input, "\n"){
-// 		row:=strings.Split(line, "")
-// 		fmt.Println(row)
-// 		result = append(result, row)
-// 	}
-// 	return result
-// }
 
 func partOne(input []string) int {
 	numbersRegexp := regexp.MustCompile("[0-9]+")
@@ -63,7 +54,6 @@ func partOne(input []string) int {
 			fmt.Printf("%010b\n", symbolToAdd)
 			lineSymbols.Or(lineSymbols, symbolToAdd)
 		}
-		// fmt.Println(strconv.FormatInt(int64(lineSymbols),2))
 		fmt.Printf("%010b\n", lineSymbols)
 		symbols = append(symbols, *lineSymbols)
 	}
